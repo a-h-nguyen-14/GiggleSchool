@@ -3,6 +3,11 @@
 <head>
 	<title>Drag and Drop Picture Game</title>
 	<style>
+		.app {
+			width: 800px;
+			height: 600px;
+			margin: 0 auto;
+		}
 		#game {
 			width: 800px;
 			height: 600px;
@@ -19,72 +24,130 @@
 			height: 100px;
 			border: 1px solid;
 		}
+		.selected {
+			width: 100px;
+			height: 100px;
+		}
 	</style>
 </head>
 <body>
 
+	<div class="app">
+		<div id="game">
+		</div>
 
-	<div id="game">
-		<!-- <img class="draggable" src="https://i.imgur.com/T6PvU6J.png" draggable="true" id="bird">
-		<img class="draggable" src="https://i.imgur.com/hNXBzgN.png" draggable="true" id="fish"> -->
-	</div>
-	<div class="pics">
-		<img class="draggable" src="./img/cat.png" draggable="false" id="cat">
-		<img class="draggable" src="./img/dog.png" draggable="false" id="dog">
-	</div>
+		<div class="pics" id="pics">
+		</div>
+		<span><img class="selected" id="currentTargetDisp"/></span><button id = "raiseBtn">Raise</button>
+    </div>
 
 <script>
 	var count = 1;
 
-	var dog = document.getElementById("dog");
-	var cat = document.getElementById("cat");
-	var bird = document.getElementById("bird");
-	var fish = document.getElementById("fish");
-	var game = document.getElementById("game");
-
-	dog.addEventListener("click", clone);
-	cat.addEventListener("click", clone);
-	// dog.addEventListener("dragstart", startDrag);
-	// cat.addEventListener("dragstart", startDrag);
-	// bird.addEventListener("dragstart", startDrag);
-	// fish.addEventListener("dragstart", startDrag);
+	var imgs = ["cat", "dog", "fish", "pig"]
+	var pics = createItems();
+	var clones = [];
 	
-	function startDrag(e) {
-		e.dataTransfer.setData("text", e.target.id);
-	}
+	var currentTarget;
+
+	var currentTargetDisp = document.getElementById("currentTargetDisp");
+	var raiseBtn = document.getElementById("raiseBtn");
+
+
 	
 	game.addEventListener("dragover", allowDrop);
 	game.addEventListener("drop", drop);
+	raiseBtn.addEventListener("click", raise);
 	
+	function startDrag(e) {
+		//console.log("startDrag")
+		e.dataTransfer.setData("text", e.target.id);
+		currentTarget = e.target;
+		setCurrentTarget(e.target.id);
+	}
+
+	function startDragPics(e) {
+		//console.log("startDragPics");
+		currentTarget = clone(e);
+	}
+
+	function raise() {
+		//console.log("raise")
+		//currentTarget.style.zIndex ? currentTarget.style.zIndex = parseInt(currentTarget.style.zIndex) + 1 : currentTarget.style.zIndex = 1;
+		currentTarget.style.zIndex = 1 + parseInt(clones[clones.length-1].style.zIndex);
+	}
+
+	function selectCurrent(e) {
+		currentTarget = e.target;
+		setCurrentTarget(e.target.id);	
+	}
+
+	function setCurrentTarget(id) {
+		imgName = id.split("_")[0]+".png";
+		imgSrc = "./img/items/"+imgName;
+		currentTargetDisp.src = imgSrc;
+		clones.sort((x,y) => x.style.zIndex- y.style.zIndex);
+	}
+
 	function clone(e) {
 		var clone = document.createElement('img');
 		clone.draggable = "true";
 		clone.src = e.target.src;
 		clone.className = "draggable";
-		clone.id = e.target.id + count;
+		clone.id = e.target.id + "_" + count;
+		clone.style.zIndex = count;
 		clone.addEventListener("dragstart", startDrag);
+		clone.addEventListener("click", selectCurrent);
 		count++;
+		clones.push(clone);
 		game.appendChild(clone);
-		
-
+		currentTarget = clone;
+		e.target = clone;
+		setCurrentTarget(clone.id);
+		return clone;
 	}
 
 	function allowDrop(e) {
-		console.log(e.target.id + " allowDrop")
+		//console.log(currentTarget.id + " currentTarget")
+		currentTarget.style.left = e.clientX - currentTarget.width/2 - game.getBoundingClientRect().left + "px";
+		currentTarget.style.top = e.clientY - currentTarget.height/2 - game.getBoundingClientRect().top + "px";
 		e.preventDefault();
 	}
 	
 	function drop(e) {
 		e.preventDefault();
 		var data = e.dataTransfer.getData("text");
-		console.log('drop: ' + data)
+		//console.log('drop: ' + data)
 		img = document.getElementById(data)
+		img = currentTarget;
+		//console.log(img, data, "drop()")
 		img.style.position = "absolute";
       	img.style.left = e.clientX - img.width/2 - game.getBoundingClientRect().left + "px";
       	img.style.top = e.clientY - img.height/2 - game.getBoundingClientRect().top + "px";
 		if (e.target.nodeName !== "IMG"){ 
 			e.target.appendChild(document.getElementById(data));
 		}
+	}
+
+	function createItems() {
+		let items = [];
+		imgs.forEach((item) => {
+			htmlItem = document.createElement("img");
+			htmlItem.src = "./img/items/"+item+".png";
+			htmlItem.draggable = "false";
+			htmlItem.id = item;
+			htmlItem.className = "draggable";
+			htmlItem.addEventListener("click", clone);
+			htmlItem.addEventListener("dragstart", startDragPics);
+			items.push(htmlItem);
+		});
+
+		itemsElement = document.getElementById("pics");
+		items.forEach((item) => {
+			itemsElement.appendChild(item);
+		});
+
+		return items;
 	}
 </script>
 </body>
